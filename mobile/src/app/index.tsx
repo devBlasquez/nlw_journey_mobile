@@ -1,31 +1,80 @@
 import { useState } from "react"
-import { View, Text, Image } from "react-native"
+import { View, Text, Image, Keyboard, Alert } from "react-native"
 import {
 	MapPin,
 	Calendar as IconCalendar,
 	Settings2,
 	UserRoundPlus,
 	ArrowRight,
+	AtSign,
 } from "lucide-react-native"
-
-import { Input } from "@/components/input"
+import { DateData } from "react-native-calendars"
+import dayjs from "dayjs"
 
 import { colors } from "@/styles/colors"
-
+import { Input } from "@/components/input"
+import { calendarUtils, DatesSelected } from "@/utils/calendarUtils"
 import { Button } from "@/components/button"
+import { Modal } from "@/components/modal"
+import { Calendar } from "@/components/calendar"
+import { GuestEmail } from "@/components/email"
 
 enum StepForm {
 	TRIP_DETAILS = 1,
 	ADD_EMAIL = 2,
 }
 
+enum MODAL {
+	NONE = 0,
+	CALENDAR = 1,
+	GUESTS = 2,
+}
+
 export default function Index() {
+	//DATA
 	const [stepForm, setStepForm] = useState(StepForm.TRIP_DETAILS)
+
+	const [selectedDates, setSelectedDates] = useState({} as DatesSelected)
+
+	const [destination, setDestination] = useState("")
+
+	//Modal
+	const [showModal, setShowModal] = useState(MODAL.NONE)
+
 	function handleNextStepForm() {
+		if (
+			destination.trim().length === 0 ||
+			!selectedDates.startsAt ||
+			!selectedDates.endsAt
+		) {
+			return Alert.alert(
+				"Detalhes da Viagem",
+				"Preencha todos as informações da viagem para seguir."
+			)
+		}
+
+		if (destination.length < 4) {
+			return Alert.alert(
+				"Detalhes da Viagem",
+				"O destino deve ter pelo menos 4 caracteres"
+			)
+		}
+
 		if (stepForm === StepForm.TRIP_DETAILS) {
 			return setStepForm(StepForm.ADD_EMAIL)
 		}
 	}
+
+	function handleSelectDate(selectedDay: DateData) {
+		const dates = calendarUtils.orderStartsAtAndEndsAt({
+			startsAt: selectedDates.startsAt,
+			endsAt: selectedDates.endsAt,
+			selectedDay,
+		})
+
+		setSelectedDates(dates)
+	}
+
 	return (
 		<View className="flex-1 items-center justify-center px-5">
 			<Image
@@ -46,6 +95,8 @@ export default function Index() {
 					<Input.Field
 						placeholder="Para Onde?"
 						editable={stepForm === StepForm.TRIP_DETAILS}
+						onChangeText={setDestination}
+						value={destination}
 					/>
 				</Input>
 
@@ -54,6 +105,12 @@ export default function Index() {
 					<Input.Field
 						placeholder="Quando?"
 						editable={stepForm === StepForm.TRIP_DETAILS}
+						onFocus={() => Keyboard.dismiss()}
+						showSoftInputOnFocus={false}
+						onPressIn={() =>
+							stepForm === StepForm.TRIP_DETAILS && setShowModal(MODAL.CALENDAR)
+						}
+						value={selectedDates.formatDatesInText}
 					/>
 				</Input>
 
@@ -93,6 +150,49 @@ export default function Index() {
 					termos de uso e políticas de privacidade.
 				</Text>
 			</Text>
+
+			<Modal
+				title="Selecionar datas"
+				subtitle="Selecione a data de ida e volta da viagem"
+				visible={showModal === MODAL.CALENDAR}
+				onClose={() => setShowModal(MODAL.NONE)}
+			>
+				<View className="gap-4 mt-4">
+					<Calendar
+						minDate={dayjs().toISOString()}
+						onDayPress={handleSelectDate}
+						markedDates={selectedDates.dates}
+					/>
+					<Button onPress={() => setShowModal(MODAL.NONE)}>
+						<Button.Title>Confirmar</Button.Title>
+					</Button>
+				</View>
+			</Modal>
+
+			<Modal
+				title="Selecionar Convidados"
+				subtitle="Os convidados irão receber e-mails para confirma a participação na viagem."
+			>
+				<View className="my-2 flex-wrap gap-2 border-b border-zinc-800 py-5 items-start">
+					<GuestEmail
+						email="mauriciojr27@hotmail.com"
+						onRemove={() => {}}
+					></GuestEmail>
+				</View>
+
+				<View className="gap-4 mt-4">
+					<Input variant="secondary">
+						<AtSign color={colors.zinc[400]} size={20} />
+						<Input.Field
+							placeholder="Digite o e-mail do convidado"
+							keyboardType="email-address"
+						/>
+					</Input>
+					<Button>
+						<Button.Title>Convidar</Button.Title>
+					</Button>
+				</View>
+			</Modal>
 		</View>
 	)
 }
