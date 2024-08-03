@@ -20,7 +20,7 @@ enum StepForm {
 }
 
 export default function Index() {
-	const [stepForm, setStepForm] = useState(StepForm.ADD_EMAIL)
+	const [stepForm, setStepForm] = useState(StepForm.TRIP_DETAILS)
 	function handleNextStepForm() {
 		if (stepForm === StepForm.TRIP_DETAILS) {
 			return setStepForm(StepForm.ADD_EMAIL)
