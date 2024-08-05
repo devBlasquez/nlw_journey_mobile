@@ -11,9 +11,12 @@ import {
 import { DateData } from "react-native-calendars"
 import dayjs from "dayjs"
 
-import { colors } from "@/styles/colors"
-import { Input } from "@/components/input"
+import { validateInput } from "@/utils/validateInput"
 import { calendarUtils, DatesSelected } from "@/utils/calendarUtils"
+
+import { colors } from "@/styles/colors"
+
+import { Input } from "@/components/input"
 import { Button } from "@/components/button"
 import { Modal } from "@/components/modal"
 import { Calendar } from "@/components/calendar"
@@ -37,6 +40,10 @@ export default function Index() {
 	const [selectedDates, setSelectedDates] = useState({} as DatesSelected)
 
 	const [destination, setDestination] = useState("")
+
+	const [emailToInvite, setEmailToInvite] = useState("")
+
+	const [emailsToInvite, setEmailsToInvite] = useState<string[]>([])
 
 	//Modal
 	const [showModal, setShowModal] = useState(MODAL.NONE)
@@ -73,6 +80,35 @@ export default function Index() {
 		})
 
 		setSelectedDates(dates)
+	}
+
+	function handleRemoveEmail(emailToRemove: string) {
+		setEmailsToInvite((prevState) =>
+			prevState.filter((email) => email !== emailToRemove)
+		)
+	}
+
+	function handleAddEmail() {
+		if (!validateInput.email(emailToInvite))
+			return Alert.alert("Convidado", "E-mail Inválido!")
+
+		const emailAlreadyExists = emailsToInvite.find(
+			(email) => email === emailToInvite
+		)
+
+		if (emailAlreadyExists)
+			return Alert.alert("Convidado", "E-mail já foi adicionado!")
+
+		setEmailsToInvite((prevState) => [...prevState, emailToInvite])
+
+		setEmailToInvite("")
+	}
+
+	async function saveTrip(tripId: string) {
+		try {
+		} catch (error) {
+			throw error
+		}
 	}
 
 	return (
@@ -128,7 +164,20 @@ export default function Index() {
 
 						<Input>
 							<UserRoundPlus color={colors.zinc[400]} size={20} />
-							<Input.Field placeholder="Quem estará na viagem?" />
+							<Input.Field
+								placeholder="Quem estará na viagem?"
+								autoCorrect={false}
+								value={
+									emailsToInvite.length > 0
+										? `${emailsToInvite.length} pessoa(as) convidada(as)`
+										: ""
+								}
+								onPress={() => {
+									Keyboard.dismiss()
+									setShowModal(MODAL.GUESTS)
+								}}
+								showSoftInputOnFocus={false}
+							/>
 						</Input>
 					</>
 				)}
@@ -172,12 +221,23 @@ export default function Index() {
 			<Modal
 				title="Selecionar Convidados"
 				subtitle="Os convidados irão receber e-mails para confirma a participação na viagem."
+				visible={showModal === MODAL.GUESTS}
+				onClose={() => setShowModal(MODAL.NONE)}
 			>
 				<View className="my-2 flex-wrap gap-2 border-b border-zinc-800 py-5 items-start">
-					<GuestEmail
-						email="mauriciojr27@hotmail.com"
-						onRemove={() => {}}
-					></GuestEmail>
+					{emailsToInvite.length > 0 ? (
+						emailsToInvite.map((email) => (
+							<GuestEmail
+								key={email}
+								email={email}
+								onRemove={() => handleRemoveEmail(email)}
+							></GuestEmail>
+						))
+					) : (
+						<Text className="text-zinc-600 text-base font-regular">
+							Nenhum email adicionado.
+						</Text>
+					)}
 				</View>
 
 				<View className="gap-4 mt-4">
@@ -186,9 +246,13 @@ export default function Index() {
 						<Input.Field
 							placeholder="Digite o e-mail do convidado"
 							keyboardType="email-address"
+							onChangeText={(text) => setEmailToInvite(text.toLowerCase())}
+							value={emailToInvite}
+							returnKeyType="send"
+							onSubmitEditing={handleAddEmail}
 						/>
 					</Input>
-					<Button>
+					<Button onPress={handleAddEmail}>
 						<Button.Title>Convidar</Button.Title>
 					</Button>
 				</View>
