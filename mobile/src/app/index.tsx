@@ -284,7 +284,7 @@ export default function Index() {
 
 			<Modal
 				title="Selecionar Convidados"
-				subtitle="Os convidados irão receber e-mails para confirma a participação na viagem."
+				subtitle="Os convidados irão receber e-mails para confirmar a participação na viagem."
 				visible={showModal === MODAL.GUESTS}
 				onClose={() => setShowModal(MODAL.NONE)}
 			>

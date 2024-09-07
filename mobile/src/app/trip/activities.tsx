@@ -108,7 +108,6 @@ export function Activities({ tripDetails }: Props) {
 			}))
 
 			setTripActivities(activitiesToSectionList)
-			console.log(activitiesToSectionList)
 		} catch (error) {
 			console.log(error)
 		} finally {
